@@ -22,6 +22,20 @@ int ordenar_por_nome(LIVRO *catalogo){
     }
 }
 
+void ordenar_por_preco(LIVRO* listaLivros){
+    int iCont, jCont;
+    LIVRO aux;
+    for(int iCont = 0; iCont < TAM - 1; iCont++){
+        for(int jCont = 0; jCont < TAM - iCont - 1; jCont++){
+            if(listaLivros[jCont].preco > listaLivros[jCont + 1].preco){
+            aux = listaLivros[jCont];
+            listaLivros[jCont] = listaLivros[jCont + 1];
+            listaLivros[jCont + 1] = aux;
+            }
+        }
+    }
+}
+
 int main(){
 // Criando e inicializando o catálogo com 10 livros
 LIVRO catalogo[TAM] = {
@@ -39,11 +53,21 @@ LIVRO catalogo[TAM] = {
 
 ordenar_por_nome(catalogo);
 
+printf("\n/// ORDENACAO POR NOME ///\n");
+
 for(int i = 0; i < TAM; i++){
     printf("\nlivro - %d ",i+1);
     printf("\nNome: %s",catalogo[i].nome);
     printf("\nPreço: %.2f\n\n",catalogo[i].preco);
 }
 
+ordenar_por_preco(catalogo);
+printf("\n/// ORDENACAO POR PRECO ///\n");
+
+for(int i = 0; i < TAM; i++){
+    printf("\nlivro - %d ",i+1);
+    printf("\nNome: %s",catalogo[i].nome);
+    printf("\nPreço: %.2f\n\n",catalogo[i].preco);
+}
 
 }
