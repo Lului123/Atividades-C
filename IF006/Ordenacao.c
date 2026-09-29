@@ -70,35 +70,76 @@ void exibir(LIVRO *catalogo){
     }
 }
 
+void menu(){
+    printf("\n/// MENU ///\n");
+    printf("\n1 - Ordenar por nome (crescente)");
+    printf("\n2 - Ordenar por nome (decrescente)");
+    printf("\n3 - Ordenar por preço (crescente)");
+    printf("\n4 - Ordenar por preço (decrescente)");
+    printf("\n0- Encerrar programa\n");
+    
+}
+
 int main(){
+    
+    // Criando e inicializando o catálogo com 10 livros
+    LIVRO catalogo[TAM] = {
+        {"O Senhor dos Aneis", 59.90},
+        {"Jogos Vorazes", 24.90},
+        {"1984", 39.90},
+        {"O Pequeno Principe", 19.90},
+        {"O Alquimista", 34.90},
+        {"Harry Potter e a Pedra Filosofal", 49.90},
+        {"Os Alunos que Ordenavam Livros", 67.67},
+        {"Vilao", 55.00},
+        {"Orgulho e Preconceito", 29.90},
+        {"Duna", 42.80}
+    };
 
-// Criando e inicializando o catálogo com 10 livros
-LIVRO catalogo[TAM] = {
-    {"O Senhor dos Aneis", 59.90},
-    {"Jogos Vorazes", 24.90},
-    {"1984", 39.90},
-    {"O Pequeno Principe", 19.90},
-    {"O Alquimista", 34.90},
-    {"Harry Potter e a Pedra Filosofal", 49.90},
-    {"Os Alunos que Ordenavam Livros", 67.67},
-    {"Vilao", 55.00},
-    {"Orgulho e Preconceito", 29.90},
-    {"Duna", 42.80}
-};
+    int opcao;
+    do
+        {int invalido;
 
-printf("\n/// ORDENACAO POR NOME CRESCENTE ///\n");
-ordenar_por_nome_crescente(catalogo);
-exibir(catalogo);
+        do{
+            invalido = 0;
 
-printf("\n/// ORDENACAO POR NOME DECRESCENTE ///\n");
-ordenar_por_nome_decrescente(catalogo);
-exibir(catalogo);
+            menu();
+            printf("\nDigite uma opcao: ");
 
-printf("\n/// ORDENACAO POR PREÇO CRESCENTE ///\n");
-ordenar_por_preco_crescente(catalogo);
-exibir(catalogo);
+            scanf("%d",&opcao);
 
-printf("\n/// ORDENACAO POR PREÇO DECRESCENTE ///\n");
-ordenar_por_preco_decrescente(catalogo);
-exibir(catalogo);
+            if(opcao < 0 || opcao > 4)
+                invalido = 1;
+            
+        }while(invalido);
+
+        switch (opcao){
+            case 1:
+                printf("\n/// ORDENACAO POR NOME CRESCENTE ///\n");
+                ordenar_por_nome_crescente(catalogo);
+                exibir(catalogo);
+                break;
+
+            case 2:
+                printf("\n/// ORDENACAO POR NOME DECRESCENTE ///\n");
+                ordenar_por_nome_decrescente(catalogo);
+                exibir(catalogo);
+                break;
+
+            case 3:
+                printf("\n/// ORDENACAO POR PREÇO CRESCENTE ///\n");
+                ordenar_por_preco_crescente(catalogo);
+                exibir(catalogo);
+                break;
+
+            case 4:
+                printf("\n/// ORDENACAO POR PREÇO DECRESCENTE ///\n");
+                ordenar_por_preco_decrescente(catalogo);
+                exibir(catalogo);
+                break;
+            case 0: 
+                printf("\n/// PROGRAMA ENCERRADO ///\n");
+                return 0;
+        }
+    }while(opcao != 0);
 }
