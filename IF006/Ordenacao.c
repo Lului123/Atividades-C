@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,12 +11,14 @@ typedef SOCKET sock_t;
 #else
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 typedef int sock_t;
 #define FECHAR close
 #endif
 
-#define PORTA 8080
+#define PORTA_PADRAO \
+  8080 /* em deploy, a porta vem da variavel de ambiente PORT */
 #define TAM 10
 
 typedef struct LIVRO {
@@ -149,6 +152,17 @@ int main() {
   WSAStartup(MAKEWORD(2, 2), &wsa);
 #endif
 
+  /* Configuracao de rede: local por padrao; em deploy (PORT definida) escuta em
+   * todas as interfaces */
+  setvbuf(stdout, NULL, _IOLBF,
+          0); /* logs aparecem na hora no painel da hospedagem */
+#ifndef _WIN32
+  signal(SIGPIPE, SIG_IGN); /* cliente que desconecta nao derruba o servidor */
+#endif
+  const char* env_porta = getenv("PORT");
+  int porta = env_porta ? atoi(env_porta) : PORTA_PADRAO;
+  if (porta <= 0 || porta > 65535) porta = PORTA_PADRAO;
+
   sock_t srv = socket(AF_INET, SOCK_STREAM, 0);
   int opt = 1;
   setsockopt(srv, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof opt);
@@ -156,21 +170,30 @@ int main() {
   struct sockaddr_in end;
   memset(&end, 0, sizeof end);
   end.sin_family = AF_INET;
-  end.sin_addr.s_addr = htonl(INADDR_LOOPBACK); /* somente esta maquina */
-  end.sin_port = htons(PORTA);
+  end.sin_addr.s_addr = htonl(env_porta ? INADDR_ANY : INADDR_LOOPBACK);
+  end.sin_port = htons(porta);
 
   if (bind(srv, (struct sockaddr*)&end, sizeof end) < 0 || listen(srv, 5) < 0) {
-    printf("Erro ao abrir a porta %d (ja esta em uso?)\n", PORTA);
+    printf("Erro ao abrir a porta %d (ja esta em uso?)\n", porta);
     return 1;
   }
   printf("\n/// SERVIDOR ATIVO ///\nAbra no navegador: http://localhost:%d\n",
-         PORTA);
+         porta);
   printf("Ctrl+C para encerrar.\n");
 
   char req[2048], json[4096];
   while (1) {
     sock_t c = accept(srv, NULL, NULL);
     if (c < 0) continue;
+    /* evita que uma conexao ociosa trave o servidor (que atende um cliente por
+     * vez) */
+#ifdef _WIN32
+    DWORD tmo = 5000;
+    setsockopt(c, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tmo, sizeof tmo);
+#else
+    struct timeval tmo = {5, 0};
+    setsockopt(c, SOL_SOCKET, SO_RCVTIMEO, &tmo, sizeof tmo);
+#endif
     int r = recv(c, req, sizeof req - 1, 0);
     if (r <= 0) {
       FECHAR(c);
