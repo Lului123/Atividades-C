@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catálogo de Livros – Ordenação em C</title>
+    <style>
+      :root {
+        --bg: #f6f4ef;
+        --card: #fff;
+        --tx: #1f1d1a;
+        --mut: #7a746b;
+        --bd: #e3ded4;
+        --ac: #2f5d8a;
+        --err: #c0392b;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1a1917;
+          --card: #252320;
+          --tx: #f0ece4;
+          --mut: #a39d92;
+          --bd: #38352f;
+          --ac: #7fb0e0;
+          --err: #e5736f;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--tx);
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 20px 16px 40px;
+      }
+      h1 {
+        font-size: 1.4rem;
+        margin: 0 0 2px;
+      }
+      .sub {
+        color: var(--mut);
+        font-size: 0.9rem;
+        margin: 0 0 18px;
+      }
+      .menu {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+        border: 1px solid var(--bd);
+        background: var(--card);
+        color: var(--tx);
+        padding: 10px 12px;
+        border-radius: 10px;
+        text-align: left;
+      }
+      button:hover:not(:disabled) {
+        border-color: var(--ac);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      button small {
+        display: block;
+        color: var(--mut);
+        font-size: 0.75rem;
+      }
+      button.on {
+        border-color: var(--ac);
+        background: color-mix(in srgb, var(--ac) 14%, var(--card));
+      }
+      .bar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 14px;
+        font-size: 0.85rem;
+        color: var(--mut);
+      }
+      .bar button {
+        padding: 6px 12px;
+      }
+      #st {
+        margin-left: auto;
+      }
+      #st.err {
+        color: var(--err);
+        font-weight: 600;
+      }
+      #list {
+        position: relative;
+        height: 580px;
+      }
+      .item {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 14px;
+        background: var(--card);
+        border: 1px solid var(--bd);
+        border-radius: 10px;
+        transition:
+          transform 0.6s cubic-bezier(0.4, 0.1, 0.2, 1),
+          border-color 0.3s;
+      }
+      .item.mov {
+        border-color: var(--ac);
+      }
+      .item .n {
+        width: 22px;
+        color: var(--mut);
+        font-size: 0.8rem;
+        text-align: right;
+      }
+      .item .t {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 500;
+      }
+      .item .p {
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>📚 Catálogo de Livros</h1>
+      <p class="sub">
+        Interface do programa Ordenacao.c — a ordenação é feita pelo código em C
+      </p>
+      <div class="menu" id="menu"></div>
+      <div class="bar">
+        <button id="reset">↺ Ordem original</button>
+        <span id="st">Conectando ao programa em C…</span>
+      </div>
+      <div id="list"></div>
+    </main>
+    <script>
+      const H = 58;
+      const OPS = [
+        "Nome (crescente)",
+        "Nome (decrescente)",
+        "Preço (crescente)",
+        "Preço (decrescente)",
+      ];
+      const list = document.getElementById("list"),
+        menu = document.getElementById("menu"),
+        st = document.getElementById("st");
+      const els = new Map(); // nome -> elemento
+      let atual = [];
+
+      function msg(t, erro) {
+        st.textContent = t;
+        st.className = erro ? "err" : "";
+      }
+      function brl(p) {
+        return "R$ " + p.toFixed(2).replace(".", ",");
+      }
+
+      function desenhar(livros, animar) {
+        livros.forEach((b, i) => {
+          let e = els.get(b.nome);
+          if (!e) {
+            e = document.createElement("div");
+            e.className = "item";
+            e.innerHTML =
+              '<span class="n"></span><span class="t"></span><span class="p"></span>';
+            e.querySelector(".t").textContent = b.nome;
+            e.querySelector(".p").textContent = brl(b.preco);
+            list.appendChild(e);
+            els.set(b.nome, e);
+            e.style.transition = "none";
+          }
+          const mudou = atual.length && atual[i] && atual[i].nome !== b.nome;
+          e.style.transform = `translateY(${i * H}px)`;
+          e.querySelector(".n").textContent = i + 1;
+          if (animar && mudou) {
+            e.classList.add("mov");
+            setTimeout(() => e.classList.remove("mov"), 700);
+          }
+          requestAnimationFrame(() => (e.style.transition = ""));
+        });
+        atual = livros;
+      }
+
+      async function api(rota) {
+        const r = await fetch(rota);
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+      }
+
+      async function ordenar(op, btn) {
+        try {
+          [...menu.children].forEach((b) => b.classList.remove("on"));
+          btn.classList.add("on");
+          msg("Ordenando no programa C…");
+          desenhar(await api("/api/ordenar?op=" + op), true);
+          msg("Ordenado por: " + OPS[op - 1]);
+        } catch (e) {
+          erro();
+        }
+      }
+      function erro() {
+        msg(
+          "Sem conexão. Execute o programa em C e abra http://localhost:8080",
+          true,
+        );
+      }
+
+      OPS.forEach((l, i) => {
+        const b = document.createElement("button");
+        b.innerHTML = `${i + 1} – ${l}`;
+        b.onclick = () => ordenar(i + 1, b);
+        menu.appendChild(b);
+      });
+      document.getElementById("reset").onclick = async () => {
+        try {
+          [...menu.children].forEach((b) => b.classList.remove("on"));
+          desenhar(await api("/api/reset"), true);
+          msg("Ordem original");
+        } catch (e) {
+          erro();
+        }
+      };
+      api("/api/catalogo")
+        .then((l) => {
+          desenhar(l, false);
+          msg("Conectado ao programa em C");
+        })
+        .catch(erro);
+    </script>
+  </body>
+</html>
